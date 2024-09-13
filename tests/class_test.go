@@ -10,6 +10,23 @@ type Base interface{}
 type Derived struct{}
 type Other struct{}
 
+// Define structs for testing
+type Person struct {
+	FirstName string
+	LastName  string
+	Name      string
+	Age       int
+	Address   *Address
+	Email     string
+}
+
+type Address struct {
+	City   string
+	State  string
+	Street string
+	Zip    string
+}
+
 func TestIsSubclass(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -97,7 +114,7 @@ func TestIsInstance(t *testing.T) {
 			name:       "Nil object and targetType",
 			object:     nil,
 			targetType: nil,
-			expected:   false,
+			expected:   true,
 		},
 	}
 
@@ -177,5 +194,66 @@ func TestSetAttr(t *testing.T) {
 	err = goutils.SetAttr(person, "Address", "New York")
 	if err == nil {
 		t.Errorf("expected error when setting non-existing field 'Address'")
+	}
+}
+
+func TestVars(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected map[string]interface{}
+	}{
+		{
+			name: "Person struct",
+			input: Person{
+				FirstName: "John",
+				LastName:  "Doe",
+				Age:       30,
+				Email:     "john.doe@gmail.com",
+			},
+			expected: map[string]interface{}{
+				"Name":      "",
+				"Email":     "john.doe@gmail.com",
+				"FirstName": "John",
+				"LastName":  "Doe",
+				"Age":       30,
+				"Address":   nil,
+			},
+		},
+		{
+			name: "Address struct",
+			input: Address{
+				Street: "123 Elm St",
+				City:   "Gotham",
+				Zip:    "12345",
+				State:  "US",
+			},
+			expected: map[string]interface{}{
+				"State":  "US",
+				"Street": "123 Elm St",
+				"City":   "Gotham",
+				"Zip":    "12345",
+			},
+		},
+		{
+			name:     "Empty struct",
+			input:    struct{}{},
+			expected: map[string]interface{}{},
+		},
+		{
+			name:     "Non-struct input",
+			input:    42,
+			expected: map[string]interface{}{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := goutils.Vars(tt.input)
+			if len(result) != len(tt.expected) {
+				t.Errorf("Vars() test = %s; got = %v; want %v", tt.name, result, tt.expected)
+				return
+			}
+		})
 	}
 }

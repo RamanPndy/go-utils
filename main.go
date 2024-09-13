@@ -42,4 +42,6 @@ func main() {
 	IsSubclassImpl()
 
 	IsInstanceImpl()
+
+	VarsImpl()
 }

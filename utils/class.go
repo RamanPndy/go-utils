@@ -99,3 +99,24 @@ func SetAttr(obj interface{}, fieldName string, value interface{}) error {
 	field.Set(val)
 	return nil
 }
+
+// Vars returns a map with field names and their values for the given struct
+func Vars(obj interface{}) map[string]interface{} {
+	val := reflect.ValueOf(obj)
+	typ := reflect.TypeOf(obj)
+	result := make(map[string]interface{})
+
+	// Ensure the provided object is a struct
+	if val.Kind() != reflect.Struct {
+		return result
+	}
+
+	// Iterate over the fields of the struct
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldName := typ.Field(i).Name
+		result[fieldName] = field.Interface()
+	}
+
+	return result
+}

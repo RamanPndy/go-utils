@@ -7,19 +7,6 @@ import (
 	goutils "github.com/RamanPndy/go-utils/utils"
 )
 
-// Define structs for testing
-type Address struct {
-	City  string
-	State string
-}
-
-type Person struct {
-	Name    string
-	Age     int
-	Address *Address
-	Email   string
-}
-
 // Test case for the Zip function
 func TestZip(t *testing.T) {
 	tests := []struct {

@@ -8,10 +8,12 @@ import (
 
 // Person struct with a deep copy method
 type Person struct {
-	Name    string
-	Age     int
-	Address *Address
-	Email   string
+	FirstName string
+	LastName  string
+	Name      string
+	Age       int
+	Address   *Address
+	Email     string
 }
 
 // Address struct
@@ -462,4 +464,20 @@ func IsInstanceImpl() {
 	fmt.Println(goutils.IsInstance(myInt, anotherInt)) // true (both int)
 	fmt.Println(goutils.IsInstance(myInt, ""))         // false (int vs string)
 	fmt.Println(goutils.IsInstance(myString, 0))       // false (string vs int)
+}
+
+func VarsImpl() {
+	p := Person{
+		FirstName: "John",
+		LastName:  "Doe",
+		Age:       30,
+	}
+
+	// Use Vars to get field names and values
+	fields := goutils.Vars(p)
+
+	// Print the map of field names and values
+	for name, value := range fields {
+		fmt.Printf("%s: %v\n", name, value)
+	}
 }
