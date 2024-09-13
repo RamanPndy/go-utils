@@ -11,7 +11,7 @@ on:
 
 jobs:
   release:
-    name: Build, Release, and Publish Go Package
+    name: Release, and Publish Go Package
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code

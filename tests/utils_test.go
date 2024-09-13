@@ -152,8 +152,8 @@ func TestCombineSlicesToMap(t *testing.T) {
 		{
 			name:   "Test with unequal length slices (values longer)",
 			keys:   []string{"x", "y"},
-			values: []int{10, 20, 30},
-			want:   map[string]int{"x": 10, "y": 20},
+			values: []float64{10, 20, 30},
+			want:   map[string]float64{"x": 10, "y": 20},
 		},
 		{
 			name:   "Test with empty slices",
