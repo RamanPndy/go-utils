@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - main
+      - develop
 
 jobs:
   test:
@@ -19,15 +20,10 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '^1.16'
+          go-version: '^1.18'
 
       - name: Run tests with coverage
         run: go test -v -coverprofile=coverage.out ./...
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.out
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: true
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
