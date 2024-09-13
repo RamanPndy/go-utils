@@ -311,6 +311,7 @@ type Person struct {
 	Name    string
 	Age     int
 	Address *Address
+	Email   string
 }
 
 func TestDeepCopyJSON(t *testing.T) {

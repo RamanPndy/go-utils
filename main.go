@@ -36,4 +36,8 @@ func main() {
 	OrderedDictImpl()
 
 	OrderedListImpl()
+
+	HasAttrImpl()
+
+	SetAttrImpl()
 }

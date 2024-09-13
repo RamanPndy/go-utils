@@ -6,6 +6,20 @@ import (
 	goutils "github.com/RamanPndy/go-utils/utils"
 )
 
+// Person struct with a deep copy method
+type Person struct {
+	Name    string
+	Age     int
+	Address *Address
+	Email   string
+}
+
+// Address struct
+type Address struct {
+	City  string
+	State string
+}
+
 func EqualsImpl() {
 	// Working with integers
 	fmt.Println(goutils.Equals(1, 1)) // true
@@ -172,19 +186,6 @@ func DeepCopyJSONImpl() {
 
 	fmt.Println("Original:", p1)
 	fmt.Println("Copy:", p2)
-}
-
-// Person struct with a deep copy method
-type Person struct {
-	Name    string
-	Age     int
-	Address *Address
-}
-
-// Address struct
-type Address struct {
-	City  string
-	State string
 }
 
 // DeepCopy performs a manual deep copy of Person
@@ -416,4 +417,36 @@ func OrderedListImpl() {
 
 	elements := ol.Elements()
 	fmt.Println("Elements:", elements) // [1 3]
+}
+
+func HasAttrImpl() {
+	person := Person{Name: "Alice", Age: 30}
+
+	// Test HasAttr with existing and non-existing fields
+	fmt.Println(goutils.HasAttr(person, "Name"))  // true
+	fmt.Println(goutils.HasAttr(person, "Age"))   // true
+	fmt.Println(goutils.HasAttr(person, "Email")) // false
+}
+
+func SetAttrImpl() {
+	person := &Person{Name: "Alice", Age: 30, Email: "alice@example.com"}
+
+	// Set the Name field
+	if err := goutils.SetAttr(person, "Name", "Bob"); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("Updated Name:", person.Name)
+	}
+
+	// Set the Age field
+	if err := goutils.SetAttr(person, "Age", 35); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("Updated Age:", person.Age)
+	}
+
+	// Try setting an invalid field
+	if err := goutils.SetAttr(person, "Address", "New York"); err != nil {
+		fmt.Println(err)
+	}
 }
