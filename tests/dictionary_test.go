@@ -1,6 +1,7 @@
 package goutils_test
 
 import (
+	"sort"
 	"testing"
 
 	goutils "github.com/RamanPndy/go-utils/utils"
@@ -31,6 +32,8 @@ func TestImmutableDict(t *testing.T) {
 	if len(keys) != len(expectedKeys) {
 		t.Errorf("Keys() = %v; want %v", keys, expectedKeys)
 	}
+	sort.Strings(expectedKeys)
+	sort.Strings(keys)
 	for i, k := range keys {
 		if k != expectedKeys[i] {
 			t.Errorf("Expected key %s at index %d, got %s", expectedKeys[i], i, k)
@@ -39,6 +42,8 @@ func TestImmutableDict(t *testing.T) {
 
 	expectedValues := []int{1, 2, 3}
 	values := dict.Values()
+	sort.Ints(expectedValues)
+	sort.Ints(values)
 	if len(values) != len(expectedValues) {
 		t.Errorf("Values() = %v; want %v", values, expectedValues)
 	}

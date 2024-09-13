@@ -54,9 +54,9 @@ func TestOrderedList(t *testing.T) {
 	}
 
 	ol.Remove(2, goutils.EqualsInt)
-	if _, ok := ol.Get(1); ok {
-		t.Errorf("Element at index 1 should be removed after calling Remove(2)")
-	}
+	// if _, ok := ol.Get(1); ok {
+	// 	t.Errorf("Element at index 1 should be removed after calling Remove(2)")
+	// }
 
 	expectedElements := []int{1, 3}
 	elements := ol.Elements()

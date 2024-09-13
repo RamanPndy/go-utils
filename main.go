@@ -21,8 +21,6 @@ func main() {
 
 	AllImpl()
 
-	IsSubclassImpl()
-
 	IteratorImpl()
 
 	SetImpl()
@@ -36,4 +34,14 @@ func main() {
 	OrderedDictImpl()
 
 	OrderedListImpl()
+
+	HasAttrImpl()
+
+	SetAttrImpl()
+
+	IsSubclassImpl()
+
+	IsInstanceImpl()
+
+	VarsImpl()
 }
