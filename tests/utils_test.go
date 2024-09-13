@@ -7,42 +7,55 @@ import (
 	goutils "github.com/RamanPndy/go-utils/utils"
 )
 
+// Define structs for testing
+type Address struct {
+	City  string
+	State string
+}
+
+type Person struct {
+	Name    string
+	Age     int
+	Address *Address
+	Email   string
+}
+
 // Test case for the Zip function
 func TestZip(t *testing.T) {
 	tests := []struct {
 		slice1 []int
 		slice2 []int
-		want   [][2]int
+		want   [][2]interface{}
 	}{
 		// Test with equal length slices
 		{
 			slice1: []int{1, 2, 3},
 			slice2: []int{4, 5, 6},
-			want:   [][2]int{{1, 4}, {2, 5}, {3, 6}},
+			want:   [][2]interface{}{{1, 4}, {2, 5}, {3, 6}},
 		},
 		// Test with first slice longer than the second
 		{
 			slice1: []int{1, 2, 3, 4},
 			slice2: []int{5, 6},
-			want:   [][2]int{{1, 5}, {2, 6}},
+			want:   [][2]interface{}{{1, 5}, {2, 6}},
 		},
 		// Test with second slice longer than the first
 		{
 			slice1: []int{7, 8},
 			slice2: []int{9, 10, 11},
-			want:   [][2]int{{7, 9}, {8, 10}},
+			want:   [][2]interface{}{{7, 9}, {8, 10}},
 		},
 		// Test with empty slices
 		{
 			slice1: []int{},
 			slice2: []int{},
-			want:   [][2]int{},
+			want:   [][2]interface{}{},
 		},
 		// Test with one empty slice
 		{
 			slice1: []int{1, 2, 3},
 			slice2: []int{},
-			want:   [][2]int{},
+			want:   [][2]interface{}{},
 		},
 	}
 
@@ -299,19 +312,6 @@ func TestFilter(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Define structs for testing
-type Address struct {
-	City  string
-	State string
-}
-
-type Person struct {
-	Name    string
-	Age     int
-	Address *Address
-	Email   string
 }
 
 func TestDeepCopyJSON(t *testing.T) {

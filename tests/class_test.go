@@ -24,8 +24,8 @@ func TestHasAttr(t *testing.T) {
 	}
 
 	// Test case 2: Check for non-existing field
-	if goutils.HasAttr(person, "Address") {
-		t.Errorf("Expected 'Address' field to not be present in Person struct")
+	if goutils.HasAttr(person, "Phone") {
+		t.Errorf("Expected 'Phone' field to not be present in Person struct")
 	}
 
 	// Test case 3: Check with pointer
