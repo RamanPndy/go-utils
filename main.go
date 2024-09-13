@@ -21,8 +21,6 @@ func main() {
 
 	AllImpl()
 
-	IsSubclassImpl()
-
 	IteratorImpl()
 
 	SetImpl()
@@ -40,4 +38,8 @@ func main() {
 	HasAttrImpl()
 
 	SetAttrImpl()
+
+	IsSubclassImpl()
+
+	IsInstanceImpl()
 }

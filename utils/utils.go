@@ -2,7 +2,6 @@ package goutils
 
 import (
 	"encoding/json"
-	"reflect"
 )
 
 // zip utility is similar to zip in python. it combines two slices of any type
@@ -93,25 +92,4 @@ func All[T any](slice []T, predicate func(T) bool) bool {
 		}
 	}
 	return true
-}
-
-type Base interface{}
-type Derived struct{}
-
-// IsSubclass checks if the type of 'sub' is a subtype of the type of 'base'.
-func IsSubclass(sub, base interface{}) bool {
-	subType := reflect.TypeOf(sub)
-	baseType := reflect.TypeOf(base)
-
-	// Check if baseType is an interface
-	if baseType.Kind() == reflect.Interface {
-		return subType.Implements(baseType)
-	}
-
-	// If baseType is a struct, check if subType is a pointer to a struct and check if it implements baseType
-	if baseType.Kind() == reflect.Struct && subType.Kind() == reflect.Ptr {
-		return reflect.TypeOf(sub).Elem().Implements(baseType)
-	}
-
-	return false
 }

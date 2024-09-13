@@ -450,3 +450,16 @@ func SetAttrImpl() {
 		fmt.Println(err)
 	}
 }
+
+func IsInstanceImpl() {
+	// Test examples
+	var myInt int = 42
+	var myString string = "hello"
+	var anotherInt int = 100
+
+	fmt.Println(goutils.IsInstance(myInt, 0))          // true (int)
+	fmt.Println(goutils.IsInstance(myString, ""))      // true (string)
+	fmt.Println(goutils.IsInstance(myInt, anotherInt)) // true (both int)
+	fmt.Println(goutils.IsInstance(myInt, ""))         // false (int vs string)
+	fmt.Println(goutils.IsInstance(myString, 0))       // false (string vs int)
+}

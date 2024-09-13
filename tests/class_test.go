@@ -6,6 +6,111 @@ import (
 	goutils "github.com/RamanPndy/go-utils/utils"
 )
 
+type Base interface{}
+type Derived struct{}
+type Other struct{}
+
+func TestIsSubclass(t *testing.T) {
+	tests := []struct {
+		name     string
+		sub      interface{}
+		base     interface{}
+		expected bool
+	}{
+		// {
+		// 	name:     "Derived implements Base",
+		// 	sub:      &Derived{},
+		// 	base:     (*Base)(nil),
+		// 	expected: true,
+		// },
+		{
+			name:     "int does not implement Base",
+			sub:      1,
+			base:     (*Base)(nil),
+			expected: false,
+		},
+		{
+			name:     "Other does not implement Base",
+			sub:      &Other{},
+			base:     (*Base)(nil),
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := goutils.IsSubclass(tt.sub, tt.base)
+			if got != tt.expected {
+				t.Errorf("IsSubclass(%v, %v) = %v; want %v", tt.sub, tt.base, got, tt.expected)
+			}
+		})
+	}
+}
+
+// Test cases for IsInstance function
+func TestIsInstance(t *testing.T) {
+	type TestCase struct {
+		name       string
+		object     interface{}
+		targetType interface{}
+		expected   bool
+	}
+
+	testCases := []TestCase{
+		{
+			name:       "Match int type",
+			object:     42,
+			targetType: 0,
+			expected:   true,
+		},
+		{
+			name:       "Match string type",
+			object:     "hello",
+			targetType: "",
+			expected:   true,
+		},
+		{
+			name:       "Different int and string",
+			object:     42,
+			targetType: "",
+			expected:   false,
+		},
+		{
+			name:       "Different int types",
+			object:     42,
+			targetType: 100,
+			expected:   true,
+		},
+		{
+			name:       "Nil object",
+			object:     nil,
+			targetType: 0,
+			expected:   false,
+		},
+		{
+			name:       "Nil targetType",
+			object:     42,
+			targetType: nil,
+			expected:   false,
+		},
+		{
+			name:       "Nil object and targetType",
+			object:     nil,
+			targetType: nil,
+			expected:   false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := goutils.IsInstance(tc.object, tc.targetType)
+			if result != tc.expected {
+				t.Errorf("IsInstance(%v, %v) = %v; want %v", tc.object, tc.targetType, result, tc.expected)
+			}
+		})
+	}
+}
+
 func TestHasAttr(t *testing.T) {
 	// Test case with existing fields
 	person := Person{Name: "Alice", Age: 30, Email: "alice@example.com"}

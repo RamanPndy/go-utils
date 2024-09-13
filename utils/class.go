@@ -5,6 +5,37 @@ import (
 	"reflect"
 )
 
+type Base interface{}
+type Derived struct{}
+
+// IsSubclass checks if the type of 'sub' is a subtype of the type of 'base'.
+func IsSubclass(sub, base interface{}) bool {
+	subType := reflect.TypeOf(sub)
+	baseType := reflect.TypeOf(base)
+
+	// Check if baseType is an interface
+	if baseType.Kind() == reflect.Interface {
+		return subType.Implements(baseType)
+	}
+
+	// If baseType is a struct, check if subType is a pointer to a struct and check if it implements baseType
+	if baseType.Kind() == reflect.Struct && subType.Kind() == reflect.Ptr {
+		return reflect.TypeOf(sub).Elem().Implements(baseType)
+	}
+
+	return false
+}
+
+// IsInstance checks if the object is of a certain type
+func IsInstance(object interface{}, targetType interface{}) bool {
+	// Use reflect.TypeOf to get the dynamic type of the object and the targetType
+	objectType := reflect.TypeOf(object)
+	targetTypeType := reflect.TypeOf(targetType)
+
+	// Compare the dynamic types
+	return objectType == targetTypeType
+}
+
 // HasAttr checks if a struct has a specific field name
 func HasAttr(obj interface{}, fieldName string) bool {
 	// Get the reflection value of the object
