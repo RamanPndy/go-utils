@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - develop
   pull_request:
     branches:
       - main
@@ -32,4 +31,5 @@ jobs:
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2.3.0
         with:
-          path: coverage.out
+          github-token: ${{ secrets.GITHUB_TOKEN }}  # Use the built-in GitHub token
+          path-to-lcov: coverage.out  # Specify the path to the coverage file
