@@ -44,4 +44,12 @@ func main() {
 	IsInstanceImpl()
 
 	VarsImpl()
+
+	MergeUniqueFieldsImpl()
+
+	SkipMergeUniqueFieldsImpl()
+
+	GetStructFieldNamesImpl()
+
+	GetStructFieldValueImpl()
 }

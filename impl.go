@@ -8,12 +8,14 @@ import (
 
 // Person struct with a deep copy method
 type Person struct {
+	ID        int
 	FirstName string
 	LastName  string
 	Name      string
 	Age       int
 	Address   *Address
 	Email     string
+	City      string
 }
 
 // Address struct
@@ -480,4 +482,64 @@ func VarsImpl() {
 	for name, value := range fields {
 		fmt.Printf("%s: %v\n", name, value)
 	}
+}
+
+func MergeUniqueFieldsImpl() {
+	// Create two objects of Person with different values
+	person1 := &Person{Name: "John", Age: 30, City: ""}
+	person2 := &Person{Name: "", Age: 25, City: "123 Street"}
+
+	// Merge the objects
+	mergedPerson := goutils.MergeUniqueFields(person1, person2).(Person)
+
+	// Print the merged result
+	fmt.Printf("Merged Person: %+v\n", mergedPerson) //Merged Person: {Name: John Age: 30 Address: 123 Street}
+}
+
+func SkipMergeUniqueFieldsImpl() {
+	person1 := &Person{
+		ID:   1,
+		Name: "John",
+		Age:  25,
+		City: "New York",
+	}
+
+	person2 := &Person{
+		ID:   2,
+		Name: "Alice",
+		Age:  30,
+		City: "New York",
+	}
+
+	mergedPerson := goutils.SkipMergeUniqueFields(person1, person2, []string{"ID"}).(Person)
+	fmt.Printf("Merged Person: %+v\n", mergedPerson) //Merged Person: {ID:1 Name:John Age:25 City:New York}
+}
+
+func GetStructFieldNamesImpl() {
+	// Create an object of Person
+	person := Person{Name: "John", Age: 30, City: "123 Street"}
+
+	// Get field names using reflection
+	fieldNames := goutils.GetStructFieldNames(person)
+
+	// Print the field names
+	fmt.Println("Field Names:", fieldNames) //Field Names: [Name Age Address]
+}
+
+func GetStructFieldValueImpl() {
+	// Create an object of Person
+	person := Person{Name: "John", Age: 30, City: "123 Street"}
+
+	// Get field values using reflection
+	name := goutils.GetStructFieldValue(person, "Name")
+	age := goutils.GetStructFieldValue(person, "Age")
+	address := goutils.GetStructFieldValue(person, "Address")
+
+	fmt.Println("Name:", name)
+	fmt.Println("Age:", age)
+	fmt.Println("Address:", address)
+
+	// Try to get a non-existent field
+	nonExistent := goutils.GetStructFieldValue(person, "NonExistent")
+	fmt.Println("NonExistent:", nonExistent) // Should print: Field 'NonExistent' not found in struct
 }
