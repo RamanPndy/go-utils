@@ -12,12 +12,14 @@ type Other struct{}
 
 // Define structs for testing
 type Person struct {
+	ID        int
 	FirstName string
 	LastName  string
 	Name      string
 	Age       int
 	Address   *Address
 	Email     string
+	City      string
 }
 
 type Address struct {
