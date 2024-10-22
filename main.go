@@ -52,4 +52,6 @@ func main() {
 	GetStructFieldNamesImpl()
 
 	GetStructFieldValueImpl()
+
+	IsNilInterfaceImpl()
 }

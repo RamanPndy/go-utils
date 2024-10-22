@@ -543,3 +543,11 @@ func GetStructFieldValueImpl() {
 	nonExistent := goutils.GetStructFieldValue(person, "NonExistent")
 	fmt.Println("NonExistent:", nonExistent) // Should print: Field 'NonExistent' not found in struct
 }
+
+func IsNilInterfaceImpl() {
+	fmt.Println("Is Nil Interface: ", goutils.IsNilInterface(nil))
+
+	nil_interface := new(interface{})
+
+	fmt.Println("Is Nil Interface: ", goutils.IsNilInterface(nil_interface))
+}
