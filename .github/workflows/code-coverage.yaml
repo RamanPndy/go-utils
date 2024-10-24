@@ -25,11 +25,17 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
-      - name: Run tests with coverage
-        run: go test -v -coverprofile=coverage.out ./...
+      - name: Test
+        run: |
+          ./.github/workflows/script.d/test.sh
 
-      - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2.3.0
+      - name: Coverage
+        run: |
+          ./.github/workflows/script.d/test-coverage.sh
+
+      - name: Upload-Coverage
+        uses: codecov/codecov-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}  # Use the built-in GitHub token
-          path-to-lcov: coverage.out  # Specify the path to the coverage file
+          override_pr: ${{ github.event.pull_request.number }}
+          override_commit: ${{ github.event.pull_request.merge_commit_sha }}
+          override_branch: "refs/heads/main"
