@@ -54,4 +54,6 @@ func main() {
 	GetStructFieldValueImpl()
 
 	IsNilInterfaceImpl()
+
+	EncodeQueryParamsImpl()
 }
