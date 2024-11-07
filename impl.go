@@ -543,3 +543,16 @@ func GetStructFieldValueImpl() {
 	nonExistent := goutils.GetStructFieldValue(person, "NonExistent")
 	fmt.Println("NonExistent:", nonExistent) // Should print: Field 'NonExistent' not found in struct
 }
+
+func IsNilInterfaceImpl() {
+	fmt.Println("Is Nil Interface: ", goutils.IsNilInterface(nil))
+
+	nil_interface := new(interface{})
+
+	fmt.Println("Is Nil Interface: ", goutils.IsNilInterface(nil_interface))
+}
+
+func EncodeQueryParamsImpl() {
+	encodedQueryParams := goutils.EncodeQueryParams("https://example.com?", map[string]string{"key1": "value1", "key2": "value2"})
+	fmt.Println("Encoded Query Params: ", encodedQueryParams) // https://example.com?key1=value1&key2=value2
+}
