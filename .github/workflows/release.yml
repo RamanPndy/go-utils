@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers the workflow on version tags like v1.0, v2.1, etc.
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./go-utils
+          asset_name: go-utils
+          asset_content_type: application/octet-stream
+
+      - name: Publish Go Package to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          go mod tidy
+          go build -o go-utils
+          echo "Publishing Go package..."
+          GOPROXY=https://proxy.golang.org,direct go publish github.com/${{ github.repository }}
+      
+      - name: Generate Installation Instructions
+        run: |
+          echo "To install this package, run the following command:"
+          echo "go get github.com/${{ github.repository }}@${{ github.ref }}"
