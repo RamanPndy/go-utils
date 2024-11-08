@@ -46,6 +46,11 @@ func TestGetFieldNames(t *testing.T) {
 			},
 			expected: []string{"Title", "Salary", "Active"},
 		},
+		// {
+		// 	name:     "Empty struct",
+		// 	input:    struct{}{},
+		// 	expected: []string{},
+		// },
 	}
 
 	// Run each test case

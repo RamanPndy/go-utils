@@ -84,6 +84,9 @@ func GetStructFieldNames(obj interface{}) []string {
 }
 
 func GetStructFieldValue(obj interface{}, fieldName string) interface{} {
+	if IsNilInterface(obj) {
+		return nil
+	}
 	// Use reflect.ValueOf to get the reflection value of the object
 	v := reflect.ValueOf(obj)
 
