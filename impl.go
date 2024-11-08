@@ -566,3 +566,8 @@ func JsonPropertiesToMapImpl() {
 	}
 	fmt.Printf("map : %v", m) // map[string]string{"name": "John", "city": "New York",}
 }
+
+func UnixTimeToTimestampImpl() {
+	ts := goutils.UnixTimeToTimestamp(1634235600)
+	fmt.Println("Unix Time to Time Stamp : ", ts)
+}

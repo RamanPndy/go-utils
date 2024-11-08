@@ -58,4 +58,6 @@ func main() {
 	EncodeQueryParamsImpl()
 
 	JsonPropertiesToMapImpl()
+
+	UnixTimeToTimestampImpl()
 }
