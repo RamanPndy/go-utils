@@ -27,10 +27,12 @@ jobs:
 
       - name: Run tests
         run: |
+          chmod +x ./.github/workflows/scripts.d/test.sh
           ./.github/workflows/scripts.d/test.sh
 
       - name: Coverage
         run: |
+          chmod +x ./.github/workflows/scripts.d/test-coverage.sh
           ./.github/workflows/scripts.d/test-coverage.sh
 
       - name: Upload-Coverage
