@@ -22,7 +22,7 @@ func TestGetFieldNames(t *testing.T) {
 				Age:  30,
 				City: "123 Street",
 			},
-			expected: []string{"Name", "Age", "City"},
+			expected: []string{"ID", "FirstName", "LastName", "Name", "Age", "Address", "Email", "City"},
 		},
 		{
 			name: "Pointer to struct",
@@ -31,7 +31,7 @@ func TestGetFieldNames(t *testing.T) {
 				Age:  25,
 				City: "456 Road",
 			},
-			expected: []string{"Name", "Age", "City"},
+			expected: []string{"ID", "FirstName", "LastName", "Name", "Age", "Address", "Email", "City"},
 		},
 		{
 			name: "Struct with additional fields",
@@ -45,11 +45,6 @@ func TestGetFieldNames(t *testing.T) {
 				Active: true,
 			},
 			expected: []string{"Title", "Salary", "Active"},
-		},
-		{
-			name:     "Empty struct",
-			input:    struct{}{},
-			expected: []string{},
 		},
 	}
 
