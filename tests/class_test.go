@@ -215,6 +215,8 @@ func TestVars(t *testing.T) {
 			},
 			expected: map[string]interface{}{
 				"Name":      "",
+				"ID":        0,
+				"City":      "",
 				"Email":     "john.doe@gmail.com",
 				"FirstName": "John",
 				"LastName":  "Doe",
