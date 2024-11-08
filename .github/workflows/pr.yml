@@ -9,6 +9,10 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -49,7 +53,11 @@ jobs:
         run: |
             go mod tidy
             go build -o go-utils
-      
+
+      - name: Check if PR is from a fork
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: echo "Skipping steps that require secrets for forked PR"
+          
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
