@@ -56,4 +56,6 @@ func main() {
 	IsNilInterfaceImpl()
 
 	EncodeQueryParamsImpl()
+
+	JsonPropertiesToMapImpl()
 }
