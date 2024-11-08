@@ -1,0 +1,82 @@
+# .github/workflows/pr-checks.yml
+
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.18'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: ./.github/workflows/script.d/test.sh
+
+      - name: Coverage
+        run: |
+          ./.github/workflows/script.d/test-coverage.sh
+
+      - name: Upload-Coverage
+        uses: codecov/codecov-action@v1
+        with:
+          override_pr: ${{ github.event.pull_request.number }}
+          override_commit: ${{ github.event.pull_request.merge_commit_sha }}
+          override_branch: "refs/heads/main"
+
+      - name: Run linter
+        run: go vet ./...
+
+      - name: Build
+        run: |
+            go mod tidy
+            go build -o go-utils
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}  # Use the pushed tag as release name
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+      
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./go-utils
+          asset_name: go-utils
+          asset_content_type: application/octet-stream
+
+      - name: Publish Go Package to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          go mod tidy
+          go build -o go-utils
+          echo "Publishing Go package..."
+          GOPROXY=https://proxy.golang.org,direct go publish github.com/${{ github.repository }}
+      
+      - name: Generate Installation Instructions
+        run: |
+          echo "To install this package, run the following command:"
+          echo "go get github.com/${{ github.repository }}@${{ github.ref }}"

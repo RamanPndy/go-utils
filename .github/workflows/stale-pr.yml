@@ -1,0 +1,26 @@
+name: "Close stale PRs"
+on:
+  schedule:
+  # 18 minutes past the hour every 12 hours
+  - cron: "18 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@v9
+      with:
+        # full list of options https://github.com/actions/stale#arguments
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-pr-message: 'This PR is stale because it has been open for 10 days with no activity. Remove stale label or comment or this will be closed in 5 days'
+        stale-pr-label: 'stale'
+        days-before-close: -1
+        days-before-pr-stale: 10
+        days-before-pr-close: 5
+        exempt-pr-labels: dependencies
+        operations-per-run: 1000
