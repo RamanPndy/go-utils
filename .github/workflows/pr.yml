@@ -1,0 +1,59 @@
+# .github/workflows/pr-checks.yml
+
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '^1.18'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: |
+          chmod +x ./.github/workflows/scripts.d/test.sh
+          ./.github/workflows/scripts.d/test.sh
+
+      - name: Coverage
+        run: |
+          chmod +x ./.github/workflows/scripts.d/test-coverage.sh
+          ./.github/workflows/scripts.d/test-coverage.sh
+
+      - name: Upload-Coverage
+        uses: codecov/codecov-action@v1
+        with:
+          override_pr: ${{ github.event.pull_request.number }}
+          override_commit: ${{ github.event.pull_request.merge_commit_sha }}
+          override_branch: "refs/heads/main"
+
+      - name: Run linter
+        run: go vet ./...
+
+      - name: Build
+        run: |
+            go mod tidy
+            go build -o go-utils
+
+      - name: Check if PR is from a fork
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: echo "Skipping steps that require secrets for forked PR"
