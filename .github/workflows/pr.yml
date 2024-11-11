@@ -49,6 +49,11 @@ jobs:
       - name: Run linter
         run: go vet ./...
 
+      - name: Check Formatting
+        run: |
+          chmod +x ./.github/workflows/scripts.d/check-formatting.sh
+          ./.github/workflows/scripts.d/check-formatting.sh
+
       - name: Build
         run: |
             go mod tidy
