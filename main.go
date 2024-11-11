@@ -56,4 +56,8 @@ func main() {
 	IsNilInterfaceImpl()
 
 	EncodeQueryParamsImpl()
+
+	JsonPropertiesToMapImpl()
+
+	UnixTimeToTimestampImpl()
 }

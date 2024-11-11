@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	goutils "github.com/RamanPndy/go-utils/utils"
 )
@@ -555,4 +556,18 @@ func IsNilInterfaceImpl() {
 func EncodeQueryParamsImpl() {
 	encodedQueryParams := goutils.EncodeQueryParams("https://example.com?", map[string]string{"key1": "value1", "key2": "value2"})
 	fmt.Println("Encoded Query Params: ", encodedQueryParams) // https://example.com?key1=value1&key2=value2
+}
+
+func JsonPropertiesToMapImpl() {
+	m, err := goutils.JsonPropertiesToMap([]byte(`{"name": "John", "city": "New York"}`))
+	if err != nil {
+		log.Printf("error %v", err)
+		return
+	}
+	fmt.Printf("map : %v", m) // map[string]string{"name": "John", "city": "New York",}
+}
+
+func UnixTimeToTimestampImpl() {
+	ts := goutils.UnixTimeToTimestamp(1634235600)
+	fmt.Println("Unix Time to Time Stamp : ", ts)
 }
