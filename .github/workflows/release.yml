@@ -4,10 +4,10 @@ on:
   push:
     tags:
       - 'v*'  # Triggers the workflow on version tags like v1.0, v2.1, etc.
-
+      
 permissions:
   contents: write
-  
+ 
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -49,3 +49,16 @@ jobs:
           asset_path: ./go-utils
           asset_name: go-utils
           asset_content_type: application/octet-stream
+
+      - name: Publish Go Package to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
+          go mod tidy
+          go build -o go-utils
+          echo "Publishing Go package..."
+          GOPROXY=https://proxy.golang.org,direct go publish github.com/${{ github.repository }}
+      
+      - name: Generate Installation Instructions
+        run: |
+          echo "To install this package, run the following command:"
+          echo "go get github.com/${{ github.repository }}@${{ github.ref }}"
