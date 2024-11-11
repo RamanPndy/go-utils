@@ -25,16 +25,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
-      - name: Publish Go Package to GitHub Packages
-        run: |
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.npmrc
-          go mod tidy
-          go build -o go-utils
-          echo "Publishing Go package..."
-          GOPROXY=https://proxy.golang.org,direct go publish github.com/${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-      
       - name: Generate Installation Instructions
         run: |
           echo "To install this package, run the following command:"
