@@ -20,6 +20,10 @@ jobs:
         with:
           go-version: '^1.18'
 
+      - name: Build the Go binary
+        run: |
+          go build -o go-utils
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
