@@ -93,3 +93,19 @@ func All[T any](slice []T, predicate func(T) bool) bool {
 	}
 	return true
 }
+
+// Dedupe returns a new slice with duplicate elements removed, preserving order.
+// The key function extracts a comparable key used to identify duplicates.
+func Dedupe[T any, K comparable](input []T, key func(T) K) []T {
+	seen := make(map[K]struct{}, len(input))
+	result := make([]T, 0, len(input))
+	for _, v := range input {
+		k := key(v)
+		if _, ok := seen[k]; ok {
+			continue
+		}
+		seen[k] = struct{}{}
+		result = append(result, v)
+	}
+	return result
+}

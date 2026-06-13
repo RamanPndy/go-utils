@@ -540,3 +540,63 @@ func TestAll(t *testing.T) {
 		})
 	}
 }
+
+func TestDedupe(t *testing.T) {
+	t.Run("Dedupe integers", func(t *testing.T) {
+		input := []int{1, 2, 3, 2, 1, 4, 3, 5}
+		got := goutils.Dedupe(input, func(v int) int { return v })
+		want := []int{1, 2, 3, 4, 5}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Dedupe() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Dedupe strings", func(t *testing.T) {
+		input := []string{"apple", "banana", "apple", "cherry", "banana"}
+		got := goutils.Dedupe(input, func(v string) string { return v })
+		want := []string{"apple", "banana", "cherry"}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Dedupe() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Dedupe structs by key", func(t *testing.T) {
+		type entity struct {
+			Type  string
+			Value string
+		}
+		input := []entity{
+			{"person", "alice"},
+			{"person", "bob"},
+			{"person", "alice"},
+			{"place", "paris"},
+		}
+		got := goutils.Dedupe(input, func(e entity) string {
+			return e.Type + ":" + e.Value
+		})
+		want := []entity{
+			{"person", "alice"},
+			{"person", "bob"},
+			{"place", "paris"},
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Dedupe() = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("Dedupe empty slice", func(t *testing.T) {
+		got := goutils.Dedupe([]int{}, func(v int) int { return v })
+		if len(got) != 0 {
+			t.Errorf("Dedupe() = %v, want empty slice", got)
+		}
+	})
+
+	t.Run("Dedupe no duplicates", func(t *testing.T) {
+		input := []int{1, 2, 3}
+		got := goutils.Dedupe(input, func(v int) int { return v })
+		want := []int{1, 2, 3}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Dedupe() = %v, want %v", got, want)
+		}
+	})
+}
