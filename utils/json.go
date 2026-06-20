@@ -53,3 +53,21 @@ func MustJSON(v any) ([]byte, error) {
 	}
 	return b, nil
 }
+
+// EscapeJSONPointer escapes a string for use in a JSON Pointer (RFC 6901).
+// The two special characters are ~ (→ ~0) and / (→ ~1).
+func EscapeJSONPointer(s string) string {
+	// Order matters: escape ~ first to avoid double-escaping.
+	out := make([]byte, 0, len(s)+8)
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '~':
+			out = append(out, '~', '0')
+		case '/':
+			out = append(out, '~', '1')
+		default:
+			out = append(out, s[i])
+		}
+	}
+	return string(out)
+}
