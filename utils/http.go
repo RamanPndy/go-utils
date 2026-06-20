@@ -2,6 +2,7 @@ package goutils
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,24 +44,116 @@ func NewAPIRequest() *APIRequest {
 	return &APIRequest{}
 }
 
-func (r *APIRequest) SetMethod(method HTTPMethod) {
+func (r *APIRequest) SetMethod(method HTTPMethod) *APIRequest {
 	r.Method = method
+	return r
 }
 
-func (r *APIRequest) SetURL(url string) {
+func (r *APIRequest) SetURL(url string) *APIRequest {
 	r.URL = url
+	return r
 }
 
-func (r *APIRequest) SetHeaders(headers map[string]string) {
+func (r *APIRequest) SetHeaders(headers map[string]string) *APIRequest {
 	r.Headers = headers
+	return r
 }
 
-func (r *APIRequest) SetBody(body []byte) {
+func (r *APIRequest) SetBody(body []byte) *APIRequest {
 	r.Body = body
+	return r
 }
 
-func (r *APIRequest) SetQueryParams(queryParams map[string]string) {
+func (r *APIRequest) SetQueryParams(queryParams map[string]string) *APIRequest {
 	r.QueryParams = queryParams
+	return r
+}
+
+func (r *APIRequest) AddHeader(key, value string) *APIRequest {
+	if r.Headers == nil {
+		r.Headers = make(map[string]string)
+	}
+	r.Headers[key] = value
+	return r
+}
+
+func (r *APIRequest) AddQueryParam(key, value string) *APIRequest {
+	if r.QueryParams == nil {
+		r.QueryParams = make(map[string]string)
+	}
+	r.QueryParams[key] = value
+	return r
+}
+
+func (r *APIRequest) SetContentType(contentType ContentType) *APIRequest {
+	r.AddHeader("Content-Type", string(contentType))
+	return r
+}
+
+func (r *APIRequest) SetAuthorization(token string) *APIRequest {
+	r.AddHeader("Authorization", token)
+	return r
+}
+
+func (r *APIRequest) SetBearerToken(token string) *APIRequest {
+	r.AddHeader("Authorization", "Bearer "+token)
+	return r
+}
+
+func (r *APIRequest) SetBasicAuth(username, password string) *APIRequest {
+	r.AddHeader("Authorization", "Basic "+basicAuth(username, password))
+	return r
+}
+
+func basicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64Encode(auth)
+}
+
+func base64Encode(s string) string {
+	return strings.TrimRight(base64.StdEncoding.EncodeToString([]byte(s)), "=")
+}
+
+func (r *APIRequest) SetJSONBody(jsonBody []byte) *APIRequest {
+	r.SetContentType(ApplicationJSON)
+	r.Body = jsonBody
+	return r
+}
+
+func (r *APIRequest) SetXMLBody(xmlBody []byte) *APIRequest {
+	r.SetContentType(ApplicationXML)
+	r.Body = xmlBody
+	return r
+}
+
+func (r *APIRequest) SetFormURLEncodedBody(formData map[string]string) *APIRequest {
+	r.SetContentType(ApplicationFormURLEncoded)
+	formValues := make([]string, 0, len(formData))
+	for key, value := range formData {
+		formValues = append(formValues, key+"="+value)
+	}
+	r.Body = []byte(strings.Join(formValues, "&"))
+	return r
+}
+
+func (r *APIRequest) SetPlainTextBody(text string) *APIRequest {
+	r.SetContentType(TextPlain)
+	r.Body = []byte(text)
+	return r
+}
+
+func (r *APIRequest) SetHTMLBody(html string) *APIRequest {
+	r.SetContentType(TextHTML)
+	r.Body = []byte(html)
+	return r
+}
+
+func (r *APIRequest) SetTimeout(timeoutSeconds int) *APIRequest {
+	if r.Headers == nil {
+		r.Headers = make(map[string]string)
+	}
+	r.Headers["Timeout"] = fmt.Sprintf("%d", timeoutSeconds)
+	return r
 }
 
 func (r *APIRequest) GetMethod() HTTPMethod {
@@ -126,9 +219,12 @@ func (r *APIRequest) String() string {
 }
 
 type APIResult struct {
-	StatusCode  int
-	ContentType string
-	BodyBytes   []byte
+	StatusCode      int
+	ContentType     string
+	ContentLength   int64
+	BodyBytes       []byte
+	ResponseBody    io.ReadCloser
+	ResponseHeaders http.Header
 }
 
 type APIError struct {
@@ -171,7 +267,7 @@ func (c *APIClient) DoRequest(ctx context.Context, request *APIRequest) (*APIRes
 	}
 }
 
-func (*APIClient) do(ctx context.Context, requestMethod string, request *APIRequest) (*APIResult, *APIError) {
+func (c *APIClient) do(ctx context.Context, requestMethod string, request *APIRequest) (*APIResult, *APIError) {
 	req, reqErr := http.NewRequestWithContext(ctx, requestMethod, request.GetFullURL(), nil)
 	if reqErr != nil {
 		return nil, &APIError{Message: fmt.Sprintf("build request: %v", reqErr)}
@@ -182,14 +278,9 @@ func (*APIClient) do(ctx context.Context, requestMethod string, request *APIRequ
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, &APIError{Message: fmt.Sprintf("read response body: %v", readErr)}
-	}
-	result := &APIResult{
-		StatusCode:  resp.StatusCode,
-		ContentType: GetContentTypeFromHeaders(request.Headers),
-		BodyBytes:   bodyBytes,
+	result, err := c.constructResult(request, resp)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("construct result: %v", err)}
 	}
 	return result, nil
 }
@@ -237,14 +328,27 @@ func (c *APIClient) DoRequestWithCustomClient(ctx context.Context, request *APIR
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, &APIError{Message: fmt.Sprintf("read response body: %v", readErr)}
+
+	result, err := c.constructResult(request, resp)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("construct result: %v", err)}
 	}
+	return result, nil
+}
+
+func (c *APIClient) constructResult(request *APIRequest, response *http.Response) (*APIResult, error) {
+	bodyBytes, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("read response body: %v", readErr)
+	}
+
 	result := &APIResult{
-		StatusCode:  resp.StatusCode,
-		ContentType: GetContentTypeFromHeaders(request.Headers),
-		BodyBytes:   bodyBytes,
+		StatusCode:      response.StatusCode,
+		ContentType:     GetContentTypeFromHeaders(request.Headers),
+		ContentLength:   response.ContentLength,
+		BodyBytes:       bodyBytes,
+		ResponseBody:    response.Body,
+		ResponseHeaders: response.Header,
 	}
 	return result, nil
 }
