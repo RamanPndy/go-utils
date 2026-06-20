@@ -1,8 +1,10 @@
 package goutils
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -70,4 +72,141 @@ func EscapeJSONPointer(s string) string {
 		}
 	}
 	return string(out)
+}
+
+func UnescapeJSONPointer(s string) string { // Order matters: unescape ~1 first to avoid double-unescaping.
+	out := make([]byte, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] == '~' && i+1 < len(s) {
+			switch s[i+1] {
+			case '0':
+				out = append(out, '~')
+				i++
+			case '1':
+				out = append(out, '/')
+				i++
+			default:
+				out = append(out, s[i])
+			}
+		} else {
+			out = append(out, s[i])
+		}
+	}
+	return string(out)
+}
+
+// Base64Encode encodes a string to base64.
+func Base64Encode(s string) string {
+	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+
+// Base64Decode decodes a base64-encoded string.
+func Base64Decode(s string) (string, error) {
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return "", fmt.Errorf("base64 decode error: %s", err)
+	}
+	return string(b), nil
+}
+
+func JSONEqual(a, b any) (bool, error) {
+	aj, err := json.Marshal(a)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	bj, err := json.Marshal(b)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	return string(aj) == string(bj), nil
+}
+
+func JSONDeepEqual(a, b any) (bool, error) {
+	aj, err := json.Marshal(a)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	bj, err := json.Marshal(b)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	var am, bm any
+	if err := json.Unmarshal(aj, &am); err != nil {
+		return false, fmt.Errorf("json unmarshal error: %s", err)
+	}
+	if err := json.Unmarshal(bj, &bm); err != nil {
+		return false, fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return reflect.DeepEqual(am, bm), nil
+}
+
+func JSONContains(a, b any) (bool, error) {
+	aj, err := json.Marshal(a)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	bj, err := json.Marshal(b)
+	if err != nil {
+		return false, fmt.Errorf("json marshal error: %s", err)
+	}
+	var am, bm any
+	if err := json.Unmarshal(aj, &am); err != nil {
+		return false, fmt.Errorf("json unmarshal error: %s", err)
+	}
+	if err := json.Unmarshal(bj, &bm); err != nil {
+		return false, fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return contains(am, bm), nil
+}
+
+func contains(a, b any) bool {
+	switch av := a.(type) {
+	case map[string]any:
+		bv, ok := b.(map[string]any)
+		if !ok {
+			return false
+		}
+		for k, v := range av {
+			if !contains(v, bv[k]) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		bv, ok := b.([]any)
+		if !ok {
+			return false
+		}
+		for _, av := range av {
+			found := false
+			for _, bv := range bv {
+				if contains(av, bv) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return false
+			}
+		}
+		return true
+	default:
+		return reflect.DeepEqual(a, b)
+	}
+}
+
+func JsonEncode(out any, r io.Reader, w io.Writer) error {
+	if err := json.NewDecoder(r).Decode(&out); err != nil {
+		return err
+	}
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(out)
+}
+
+func JsonDecode(s string, v any) error {
+	if err := json.Unmarshal([]byte(s), v); err != nil {
+		return fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return nil
 }

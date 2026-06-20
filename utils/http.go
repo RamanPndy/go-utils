@@ -219,9 +219,12 @@ func (r *APIRequest) String() string {
 }
 
 type APIResult struct {
-	StatusCode  int
-	ContentType string
-	BodyBytes   []byte
+	StatusCode      int
+	ContentType     string
+	ContentLength   int64
+	BodyBytes       []byte
+	ResponseBody    io.ReadCloser
+	ResponseHeaders http.Header
 }
 
 type APIError struct {
@@ -264,7 +267,7 @@ func (c *APIClient) DoRequest(ctx context.Context, request *APIRequest) (*APIRes
 	}
 }
 
-func (*APIClient) do(ctx context.Context, requestMethod string, request *APIRequest) (*APIResult, *APIError) {
+func (c *APIClient) do(ctx context.Context, requestMethod string, request *APIRequest) (*APIResult, *APIError) {
 	req, reqErr := http.NewRequestWithContext(ctx, requestMethod, request.GetFullURL(), nil)
 	if reqErr != nil {
 		return nil, &APIError{Message: fmt.Sprintf("build request: %v", reqErr)}
@@ -275,14 +278,9 @@ func (*APIClient) do(ctx context.Context, requestMethod string, request *APIRequ
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, &APIError{Message: fmt.Sprintf("read response body: %v", readErr)}
-	}
-	result := &APIResult{
-		StatusCode:  resp.StatusCode,
-		ContentType: GetContentTypeFromHeaders(request.Headers),
-		BodyBytes:   bodyBytes,
+	result, err := c.constructResult(request, resp)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("construct result: %v", err)}
 	}
 	return result, nil
 }
@@ -330,14 +328,27 @@ func (c *APIClient) DoRequestWithCustomClient(ctx context.Context, request *APIR
 	}
 
 	defer resp.Body.Close()
-	bodyBytes, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, &APIError{Message: fmt.Sprintf("read response body: %v", readErr)}
+
+	result, err := c.constructResult(request, resp)
+	if err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("construct result: %v", err)}
 	}
+	return result, nil
+}
+
+func (c *APIClient) constructResult(request *APIRequest, response *http.Response) (*APIResult, error) {
+	bodyBytes, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		return nil, fmt.Errorf("read response body: %v", readErr)
+	}
+
 	result := &APIResult{
-		StatusCode:  resp.StatusCode,
-		ContentType: GetContentTypeFromHeaders(request.Headers),
-		BodyBytes:   bodyBytes,
+		StatusCode:      response.StatusCode,
+		ContentType:     GetContentTypeFromHeaders(request.Headers),
+		ContentLength:   response.ContentLength,
+		BodyBytes:       bodyBytes,
+		ResponseBody:    response.Body,
+		ResponseHeaders: response.Header,
 	}
 	return result, nil
 }
