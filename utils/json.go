@@ -45,3 +45,11 @@ func JsonPropertiesToMap(jsonStr []byte) (map[string]string, error) {
 
 	return properties, nil
 }
+
+func MustJSON(v any) ([]byte, error) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("json marshal error: %s", err)
+	}
+	return b, nil
+}
