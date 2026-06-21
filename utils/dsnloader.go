@@ -30,9 +30,9 @@ type Loader struct {
 	logger  *logrus.Logger
 }
 
-// New creates a Loader that reads the DSN from path and watches it for changes.
+// NewDsnLoader creates a Loader that reads the DSN from path and watches it for changes.
 // The initial DSN value is read synchronously; call Watch to begin file monitoring.
-func New(path string, onChange OnChange, logger *logrus.Logger) (*Loader, error) {
+func NewDsnLoader(path string, onChange OnChange, logger *logrus.Logger) (*Loader, error) {
 	dsn, err := readDSN(path)
 	if err != nil {
 		return nil, fmt.Errorf("dsnloader: initial read: %w", err)
