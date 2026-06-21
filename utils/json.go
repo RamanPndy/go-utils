@@ -195,18 +195,63 @@ func contains(a, b any) bool {
 	}
 }
 
+func JsonEncodeWithIndent(out any, r io.Reader, w io.Writer, prefix, indent string) error {
+	if err := json.NewDecoder(r).Decode(&out); err != nil {
+		return err
+	}
+	enc := json.NewEncoder(w)
+	enc.SetIndent(prefix, indent)
+	return enc.Encode(out)
+}
+
 func JsonEncode(out any, r io.Reader, w io.Writer) error {
 	if err := json.NewDecoder(r).Decode(&out); err != nil {
 		return err
 	}
 	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
 	return enc.Encode(out)
 }
 
-func JsonDecode(s string, v any) error {
+func JsonDecodeFromReader(r io.Reader, v any) error {
+	if err := json.NewDecoder(r).Decode(v); err != nil {
+		return fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return nil
+}
+
+func JsonDecodeFromBytes(b []byte, v any) error {
+	if err := json.Unmarshal(b, v); err != nil {
+		return fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return nil
+}
+
+func JsonDecodeFromString(s string, v any) error {
 	if err := json.Unmarshal([]byte(s), v); err != nil {
 		return fmt.Errorf("json unmarshal error: %s", err)
+	}
+	return nil
+}
+
+func JsonEncodeToBytes(v any) ([]byte, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal error: %s", err)
+	}
+	return b, nil
+}
+
+func JsonEncodeToString(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", fmt.Errorf("json marshal error: %s", err)
+	}
+	return string(b), nil
+}
+
+func JsonEncodeToWriter(v any, w io.Writer) error {
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		return fmt.Errorf("json marshal error: %s", err)
 	}
 	return nil
 }

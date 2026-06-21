@@ -1,7 +1,11 @@
 package goutils
 
 import (
+	"context"
 	"encoding/json"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 // --- K8s API list response types ---
@@ -73,4 +77,28 @@ type k8sJob struct {
 		Succeeded      int    `json:"succeeded"`
 		Failed         int    `json:"failed"`
 	} `json:"status"`
+}
+
+// KubectlApply runs `kubectl apply -f -` with the given manifest as stdin.
+func KubectlApply(manifest string) error {
+	cmd := exec.CommandContext(context.Background(), "kubectl", "apply", "-f", "-")
+	cmd.Stdin = strings.NewReader(manifest)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// KubectlGet runs `kubectl get <resource> [name] -o json` and returns the output.
+func KubectlGet(resource, name string) ([]byte, error) {
+	args := []string{"get", resource}
+	if name != "" {
+		args = append(args, name)
+	}
+	args = append(args, "-o", "json")
+	return exec.CommandContext(context.Background(), "kubectl", args...).Output()
+}
+
+// KubectlRaw runs an arbitrary kubectl command and returns stdout.
+func KubectlRaw(args ...string) ([]byte, error) {
+	return exec.CommandContext(context.Background(), "kubectl", args...).Output()
 }

@@ -8,6 +8,9 @@ import (
 	"time"
 
 	"github.com/dlmiddlecote/sqlstats"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jinzhu/gorm"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -16,6 +19,9 @@ import (
 
 const (
 	HOTLOADDBType = "hotload"
+	POSTGRESQL    = "postgres"
+	MYSQL         = "mysql"
+	SQLITE3       = "sqlite3"
 )
 
 type DatabaseConfig struct {
@@ -38,6 +44,17 @@ type DBConnInterface interface {
 	Connect() (*gorm.DB, error)
 	Close(*gorm.DB) error
 	Ready() error
+	Migrate(db *gorm.DB, models ...interface{}) error
+	Rollback(db *gorm.DB) error
+	MigrateFromPath(db *gorm.DB, migrationsPath string) error
+	RollbackFromPath(db *gorm.DB, migrationsPath string) error
+	Version(db *gorm.DB) (string, error)
+	GetDBConfig() *DatabaseConfig
+	IsHotload() bool
+	GetDSN() string
+	GetDBType() string
+	IsReady() bool
+	IsDBSupported() bool
 }
 
 type DBConn struct {
@@ -106,6 +123,136 @@ func (c *DBConn) Ready() error {
 	defer db.Close()
 
 	return db.Ping()
+}
+
+func (c *DBConn) Migrate(db *gorm.DB, models ...interface{}) error {
+	return db.AutoMigrate(models...).Error
+}
+
+func (c *DBConn) Rollback(db *gorm.DB) error {
+	return db.Close()
+}
+
+func (c *DBConn) MigrateFromPath(db *gorm.DB, migrationsPath string) error {
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", migrationsPath),
+		c.dbConfig.DSN,
+	)
+	if err != nil {
+		c.logger.Errorf("Run : initializing migrator: %v", err)
+		return fmt.Errorf("initializing migrator: %w", err)
+	}
+	defer func() {
+		_, err = m.Close()
+		if err != nil {
+			c.logger.Errorf("closing migrator: %v", err)
+		}
+	}()
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		c.logger.Errorf("running migrations: %v", err)
+		return fmt.Errorf("running migrations: %w", err)
+	}
+	return nil
+}
+
+func (c *DBConn) RollbackFromPath(db *gorm.DB, migrationsPath string, steps int) error {
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", migrationsPath),
+		c.dbConfig.DSN,
+	)
+	if err != nil {
+		c.logger.Errorf("Run : initializing migrator: %v", err)
+		return fmt.Errorf("initializing migrator: %w", err)
+	}
+	defer func() {
+		_, err = m.Close()
+		if err != nil {
+			c.logger.Errorf("closing migrator: %v", err)
+		}
+	}()
+
+	if steps != 0 {
+		if err := m.Steps(-steps); err != nil && err != migrate.ErrNoChange {
+			c.logger.Errorf("running rollback migrations: %v", err)
+			return fmt.Errorf("running rollback migrations: %w", err)
+		}
+	} else {
+		if err := m.Down(); err != nil && err != migrate.ErrNoChange {
+			c.logger.Errorf("running rollback migrations: %v", err)
+			return fmt.Errorf("running rollback migrations: %w", err)
+		}
+	}
+	return nil
+}
+
+func (c *DBConn) Version(db *gorm.DB) (string, error) {
+	m, err := migrate.New(
+		fmt.Sprintf("file://%s", "migrations"),
+		c.dbConfig.DSN,
+	)
+	if err != nil {
+		c.logger.Errorf("Run : initializing migrator: %v", err)
+		return "", fmt.Errorf("initializing migrator: %w", err)
+	}
+	defer func() {
+		_, err = m.Close()
+		if err != nil {
+			c.logger.Errorf("closing migrator: %v", err)
+		}
+	}()
+
+	version, dirty, err := m.Version()
+	if err != nil {
+		c.logger.Errorf("getting migration version: %v", err)
+		return "", fmt.Errorf("getting migration version: %w", err)
+	}
+
+	if dirty {
+		return fmt.Sprintf("%d (dirty)", version), nil
+	}
+	return fmt.Sprintf("%d", version), nil
+}
+
+func (c *DBConn) GetDBConfig() *DatabaseConfig {
+	return c.dbConfig
+}
+
+func (c *DBConn) IsHotload() bool {
+	return c.dbConfig.Type == HOTLOADDBType
+}
+
+func (c *DBConn) GetDSN() string {
+	return c.dbConfig.DSN
+}
+
+func (c *DBConn) GetDBType() string {
+	return c.dbConfig.Type
+}
+
+func (c *DBConn) IsReady() bool {
+	db, err := sql.Open(c.dbConfig.Type, c.dbConfig.DSN)
+	if err != nil {
+		c.logger.WithError(err).Error("failed to open database connection")
+		return false
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		c.logger.WithError(err).Error("database ping failed")
+		return false
+	}
+	return true
+}
+
+func (c *DBConn) IsDBSupported() bool {
+	supportedDBs := []string{POSTGRESQL, MYSQL, SQLITE3, HOTLOADDBType}
+	for _, db := range supportedDBs {
+		if c.dbConfig.Type == db {
+			return true
+		}
+	}
+	return false
 }
 
 // registerSQLStats exposes database/sql pool stats as go_sql_stats_connections_* metrics.
