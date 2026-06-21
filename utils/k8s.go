@@ -272,3 +272,11 @@ func (c *Client) setHeaders(req *http.Request) {
 	}
 	req.Header.Set("Accept", "application/json")
 }
+
+func KubectlApplyManifest(manifest string) error {
+	cmd := exec.CommandContext(context.Background(), "kubectl", "apply", "-f", "-")
+	cmd.Stdin = strings.NewReader(manifest)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
