@@ -46,9 +46,9 @@ type DBConnInterface interface {
 	Ready() error
 	Migrate(db *gorm.DB, models ...interface{}) error
 	Rollback(db *gorm.DB) error
-	MigrateFromPath(db *gorm.DB, migrationsPath string) error
-	RollbackFromPath(db *gorm.DB, migrationsPath string) error
-	Version(db *gorm.DB) (string, error)
+	MigrateFromPath(migrationsPath string) error
+	RollbackFromPath(migrationsPath string, steps int) error
+	Version() (string, error)
 	GetDBConfig() *DatabaseConfig
 	IsHotload() bool
 	GetDSN() string
@@ -133,7 +133,7 @@ func (c *DBConn) Rollback(db *gorm.DB) error {
 	return db.Close()
 }
 
-func (c *DBConn) MigrateFromPath(db *gorm.DB, migrationsPath string) error {
+func (c *DBConn) MigrateFromPath(migrationsPath string) error {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationsPath),
 		c.dbConfig.DSN,
@@ -156,7 +156,7 @@ func (c *DBConn) MigrateFromPath(db *gorm.DB, migrationsPath string) error {
 	return nil
 }
 
-func (c *DBConn) RollbackFromPath(db *gorm.DB, migrationsPath string, steps int) error {
+func (c *DBConn) RollbackFromPath(migrationsPath string, steps int) error {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", migrationsPath),
 		c.dbConfig.DSN,
@@ -186,7 +186,7 @@ func (c *DBConn) RollbackFromPath(db *gorm.DB, migrationsPath string, steps int)
 	return nil
 }
 
-func (c *DBConn) Version(db *gorm.DB) (string, error) {
+func (c *DBConn) Version() (string, error) {
 	m, err := migrate.New(
 		fmt.Sprintf("file://%s", "migrations"),
 		c.dbConfig.DSN,

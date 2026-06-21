@@ -44,6 +44,11 @@ func NewAPIRequest() *APIRequest {
 	return &APIRequest{}
 }
 
+func (r *APIRequest) SetMethodByName(method string) *APIRequest {
+	r.Method = HTTPMethod(method)
+	return r
+}
+
 func (r *APIRequest) SetMethod(method HTTPMethod) *APIRequest {
 	r.Method = method
 	return r
