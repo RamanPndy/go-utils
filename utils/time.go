@@ -16,3 +16,10 @@ func UnixTimeToTimestamp(unixTime int64) *timestamp.Timestamp {
 
 	return ts
 }
+
+func NormalizeTime(t time.Time) time.Time {
+	if t.IsZero() {
+		return t
+	}
+	return t.UTC().Round(0)
+}
