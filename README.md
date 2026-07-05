@@ -60,6 +60,7 @@ import goutils "github.com/RamanPndy/go-utils/utils"
 ### Infrastructure Helpers
 
 - Database and DSN: `BuildDSN`, `NewDBConn`, `OpenDB`, `NewDsnLoader`, `NewPostgresStore`
+- Cache: `NewCache`, `NewMemoryCache`, `NewMultiCache`, `NewRedisCacheFromGoRedis`, `NewMemcacheCacheFromClient`
 - File watching: `NewFileWatcher`, `NewWatcher`, `NotifyOnFileChange`
 - Kubernetes command wrappers: `KubectlGet`, `KubectlApply`, `KubectlRaw`, `InClusterConfig`
 - Misc: `ReadFile`, `Compute`, `UnixTimeToTimestamp`, `GetFirstNonEmpty`, `IndentBlock`
@@ -104,6 +105,39 @@ jsonStr, _ := goutils.JsonEncodeToString(data)
 var decoded Payload
 _ = goutils.JsonDecodeFromString(jsonStr, &decoded)
 _ = decoded
+```
+
+### Cache (memory/redis/memcache/multi)
+
+```go
+ctx := context.Background()
+
+cache := goutils.NewMemoryCache()
+_ = cache.Set(ctx, "user:1", []byte("Alice"), 5*time.Minute)
+value, _ := cache.Get(ctx, "user:1")
+_ = value
+```
+
+```go
+redisClient := redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})
+redisCache, _ := goutils.NewRedisCacheFromGoRedis(redisClient)
+
+_ = redisCache.Set(context.Background(), "session:token", []byte("abc123"), 10*time.Minute)
+```
+
+```go
+memc := memcache.New("127.0.0.1:11211")
+memcacheCache, _ := goutils.NewMemcacheCacheFromClient(memc)
+
+_ = memcacheCache.Set(context.Background(), "feature:flag", []byte("enabled"), time.Minute)
+```
+
+```go
+primary := goutils.NewMemoryCache()
+fallback := goutils.NewMemoryCache()
+
+multi, _ := goutils.NewMultiCache(primary, fallback)
+_ = multi.Set(context.Background(), "key", []byte("value"), 0)
 ```
 
 ## Scripts
