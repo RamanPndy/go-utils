@@ -2,6 +2,7 @@ package goutils
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jinzhu/gorm"
 	"github.com/prometheus/client_golang/prometheus"
+	"gorm.io/datatypes"
 
 	"github.com/sirupsen/logrus"
 )
@@ -386,4 +388,23 @@ func registerHotloadDialect(dsn string) error {
 	}
 	gorm.RegisterDialect("hotload", dialect)
 	return nil
+}
+
+func DataTypeJsonToMap(value datatypes.JSON) (map[string]any, error) {
+	if len(value) == 0 {
+		return map[string]any{}, nil
+	}
+	out := map[string]any{}
+	if err := json.Unmarshal(value, &out); err != nil {
+		return nil, fmt.Errorf("json unmarshal error: %w", err)
+	}
+	return out, nil
+}
+
+func NormalizeDataTypeToJSON(value datatypes.JSON) datatypes.JSON {
+	trimmed := strings.TrimSpace(string(value))
+	if trimmed == "" {
+		return datatypes.JSON([]byte("{}"))
+	}
+	return value
 }
