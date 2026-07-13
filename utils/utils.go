@@ -116,3 +116,15 @@ func GetOrDefault[T any](value *T, def T) T {
 	}
 	return *value
 }
+
+func Deref[T any](p *T) T {
+	var zero T
+	return DerefOr(p, zero)
+}
+
+func DerefOr[T any](p *T, defaultValue T) T {
+	if p == nil {
+		return defaultValue
+	}
+	return *p
+}
