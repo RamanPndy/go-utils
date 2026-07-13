@@ -109,3 +109,10 @@ func Dedupe[T any, K comparable](input []T, key func(T) K) []T {
 	}
 	return result
 }
+
+func GetOrDefault[T any](value *T, def T) T {
+	if value == nil {
+		return def
+	}
+	return *value
+}
