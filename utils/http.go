@@ -33,6 +33,7 @@ const (
 )
 
 type APIRequest struct {
+	ctx         *context.Context
 	Method      HTTPMethod
 	URL         string
 	Headers     map[string]string
@@ -42,6 +43,16 @@ type APIRequest struct {
 
 func NewAPIRequest() *APIRequest {
 	return &APIRequest{}
+}
+
+func (r *APIRequest) SetContext(ctx context.Context) *APIRequest {
+	r.ctx = &ctx
+	return r
+}
+
+func (r *APIRequest) SetMethodByName(method string) *APIRequest {
+	r.Method = HTTPMethod(method)
+	return r
 }
 
 func (r *APIRequest) SetMethod(method HTTPMethod) *APIRequest {
@@ -268,6 +279,9 @@ func (c *APIClient) DoRequest(ctx context.Context, request *APIRequest) (*APIRes
 }
 
 func (c *APIClient) do(ctx context.Context, requestMethod string, request *APIRequest) (*APIResult, *APIError) {
+	if request.ctx != nil {
+		ctx = *request.ctx
+	}
 	req, reqErr := http.NewRequestWithContext(ctx, requestMethod, request.GetFullURL(), nil)
 	if reqErr != nil {
 		return nil, &APIError{Message: fmt.Sprintf("build request: %v", reqErr)}

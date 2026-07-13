@@ -2,6 +2,7 @@ package goutils
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jinzhu/gorm"
 	"github.com/prometheus/client_golang/prometheus"
+	"gorm.io/datatypes"
 
 	"github.com/sirupsen/logrus"
 )
@@ -33,7 +35,9 @@ type DatabaseConfig struct {
 	Name            string
 	SSL             string
 	DSN             string
+	DSNFile         string
 	LogMode         bool
+	MigrationsPath  string
 	MaxOpenConns    int
 	MaxIdleConns    int
 	MaxConnLifetime time.Duration
@@ -46,15 +50,17 @@ type DBConnInterface interface {
 	Ready() error
 	Migrate(db *gorm.DB, models ...interface{}) error
 	Rollback(db *gorm.DB) error
-	MigrateFromPath(db *gorm.DB, migrationsPath string) error
-	RollbackFromPath(db *gorm.DB, migrationsPath string) error
-	Version(db *gorm.DB) (string, error)
+	MigrateFromPath() error
+	RollbackFromPath(steps int) error
+	Version() (string, error)
 	GetDBConfig() *DatabaseConfig
 	IsHotload() bool
 	GetDSN() string
 	GetDBType() string
 	IsReady() bool
 	IsDBSupported() bool
+	ReConnect() (*gorm.DB, error)
+	DbConnectFromDSNFileViaWatcher(dsnFile string, pg *PostgresStore) error
 }
 
 type DBConn struct {
@@ -115,6 +121,49 @@ func new(dbConfig *DatabaseConfig, logger *logrus.Logger) (*gorm.DB, error) {
 	return db, nil
 }
 
+func (c *DBConn) NewConnFromDsnFile() (*gorm.DB, error) {
+	if c.dbConfig.DSNFile == "" {
+		return nil, fmt.Errorf("dsn file path is empty")
+	}
+	dsn, err := readDSN(c.dbConfig.DSNFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read dsn from file: %w", err)
+	}
+	c.dbConfig.DSN = dsn
+	return new(c.dbConfig, c.logger)
+}
+
+func (c *DBConn) ReConnect() (*gorm.DB, error) {
+	if c.dbConfig.DSNFile != "" {
+		return c.NewConnFromDsnFile()
+	}
+	return new(c.dbConfig, c.logger)
+}
+
+func (c *DBConn) DbConnectFromDSNFileViaWatcher(dsnFile string, pg *PostgresStore) error {
+	if dsnFile != "" {
+		loader, err := NewDsnLoader(dsnFile, func(newDSN string) error {
+			return pg.Reconnect(newDSN)
+		}, c.logger)
+		if err != nil {
+			c.logger.Errorf("Loading DSN file failed: %v", err)
+			return fmt.Errorf("loading dsn file: %w", err)
+		}
+		defer func() {
+			err := loader.Close()
+			if err != nil {
+				c.logger.Errorf("Closing DSN loader failed: %v", err)
+			}
+		}()
+		if err := loader.Watch(); err != nil {
+			c.logger.Errorf("Watching DSN file failed: %v", err)
+			return fmt.Errorf("watching dsn file: %w", err)
+		}
+		c.logger.Info("Watching DSN file for changes", "path", dsnFile)
+	}
+	return nil
+}
+
 func (c *DBConn) Ready() error {
 	db, err := sql.Open(c.dbConfig.Type, c.dbConfig.DSN)
 	if err != nil {
@@ -133,9 +182,9 @@ func (c *DBConn) Rollback(db *gorm.DB) error {
 	return db.Close()
 }
 
-func (c *DBConn) MigrateFromPath(db *gorm.DB, migrationsPath string) error {
+func (c *DBConn) MigrateFromPath() error {
 	m, err := migrate.New(
-		fmt.Sprintf("file://%s", migrationsPath),
+		fmt.Sprintf("file://%s", c.dbConfig.MigrationsPath),
 		c.dbConfig.DSN,
 	)
 	if err != nil {
@@ -156,9 +205,9 @@ func (c *DBConn) MigrateFromPath(db *gorm.DB, migrationsPath string) error {
 	return nil
 }
 
-func (c *DBConn) RollbackFromPath(db *gorm.DB, migrationsPath string, steps int) error {
+func (c *DBConn) RollbackFromPath(steps int) error {
 	m, err := migrate.New(
-		fmt.Sprintf("file://%s", migrationsPath),
+		fmt.Sprintf("file://%s", c.dbConfig.MigrationsPath),
 		c.dbConfig.DSN,
 	)
 	if err != nil {
@@ -186,9 +235,9 @@ func (c *DBConn) RollbackFromPath(db *gorm.DB, migrationsPath string, steps int)
 	return nil
 }
 
-func (c *DBConn) Version(db *gorm.DB) (string, error) {
+func (c *DBConn) Version() (string, error) {
 	m, err := migrate.New(
-		fmt.Sprintf("file://%s", "migrations"),
+		fmt.Sprintf("file://%s", c.dbConfig.MigrationsPath),
 		c.dbConfig.DSN,
 	)
 	if err != nil {
@@ -339,4 +388,23 @@ func registerHotloadDialect(dsn string) error {
 	}
 	gorm.RegisterDialect("hotload", dialect)
 	return nil
+}
+
+func DataTypeJsonToMap(value datatypes.JSON) (map[string]any, error) {
+	if len(value) == 0 {
+		return map[string]any{}, nil
+	}
+	out := map[string]any{}
+	if err := json.Unmarshal(value, &out); err != nil {
+		return nil, fmt.Errorf("json unmarshal error: %w", err)
+	}
+	return out, nil
+}
+
+func NormalizeDataTypeToJSON(value datatypes.JSON) datatypes.JSON {
+	trimmed := strings.TrimSpace(string(value))
+	if trimmed == "" {
+		return datatypes.JSON([]byte("{}"))
+	}
+	return value
 }

@@ -2,7 +2,6 @@ package goutils
 
 import (
 	"encoding/json"
-	"strings"
 )
 
 // zip utility is similar to zip in python. it combines two slices of any type
@@ -111,18 +110,9 @@ func Dedupe[T any, K comparable](input []T, key func(T) K) []T {
 	return result
 }
 
-func IndentBlock(text, prefix string) string {
-	trimmed := strings.TrimRight(text, "\n")
-	if trimmed == "" {
-		return ""
+func GetOrDefault[T any](value *T, def T) T {
+	if value == nil {
+		return def
 	}
-	lines := strings.Split(trimmed, "\n")
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			lines[i] = prefix
-			continue
-		}
-		lines[i] = prefix + line
-	}
-	return strings.Join(lines, "\n")
+	return *value
 }
