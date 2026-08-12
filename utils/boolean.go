@@ -18,3 +18,14 @@ func AsBool(v any) (bool, bool) {
 	}
 	return false, false
 }
+
+func GetBoolKeysListAndMap(payload map[string]any, keys ...string) bool {
+	for _, key := range keys {
+		if value, ok := payload[key]; ok {
+			if b, ok := value.(bool); ok {
+				return b
+			}
+		}
+	}
+	return false
+}

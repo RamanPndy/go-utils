@@ -50,3 +50,30 @@ func AsString(v any) (string, bool) {
 	}
 	return strings.TrimSpace(s), true
 }
+
+func UniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func GetStringKeysListAndMap(payload map[string]any, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := payload[key]; ok {
+			if text, ok := value.(string); ok {
+				return text
+			}
+		}
+	}
+	return ""
+}

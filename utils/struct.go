@@ -3,6 +3,7 @@ package goutils
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // Function to merge two structs if they have unique values
@@ -106,4 +107,72 @@ func GetStructFieldValue(obj interface{}, fieldName string) interface{} {
 
 	// Return the interface value of the field
 	return fieldVal.Interface()
+}
+
+// FlattenStageContext returns all StageContext fields as a map[string]any
+// suitable for structured logging (zap, slog, logrus, etc.).
+func flattenStageContext(ctx any) map[string]any {
+	result := make(map[string]any)
+
+	v := reflect.ValueOf(ctx)
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct {
+		return result
+	}
+
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i)
+
+		result[field.Name] = NormalizeValue(value.Interface())
+	}
+
+	return result
+}
+
+func NormalizeValue(v any) any {
+	switch val := v.(type) {
+
+	case time.Time:
+		if val.IsZero() {
+			return nil
+		}
+		return val.Format(time.RFC3339Nano)
+
+	case time.Duration:
+		return val.String()
+
+	case fmt.Stringer:
+		return val.String()
+	}
+
+	rv := reflect.ValueOf(v)
+
+	switch rv.Kind() {
+
+	case reflect.Slice:
+		if rv.IsNil() {
+			return []any{}
+		}
+		return v
+
+	case reflect.Map:
+		if rv.IsNil() {
+			return map[string]any{}
+		}
+		return v
+
+	case reflect.Pointer:
+		if rv.IsNil() {
+			return nil
+		}
+		return NormalizeValue(rv.Elem().Interface())
+	}
+
+	return v
 }
